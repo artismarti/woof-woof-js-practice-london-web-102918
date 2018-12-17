@@ -1,11 +1,16 @@
 const pupsURL = 'http://127.0.0.1:3000/pups'
-// WHY IS THIS NULL IN THE CODE BUT GETS THE VALUE IN CONSOLE? FML.
-let filterBtn = document.getElementById('good-dog-filter')
+const filterBtn = document.getElementById('good-dog-filter')
+let pupSpans
+let isFilterOn = false
+
 
 function fetchPups() {
   fetch(`${pupsURL}`)
   .then(response => response.json())
-  .then(pups => showPups(pups))
+  .then(pups => {
+    showPups(pups)
+    init();
+  })
 }
 
 const showPups = (pups) => {
@@ -17,67 +22,67 @@ const showPups = (pups) => {
     pupSpan.innerHTML = `
     <img src="${pup.image}" alt="Puppy Image">
     <h2>${pup.name}</h2>
-    <button type="button" name="button">${pup.isGoodDog ? "Good Dog!" : "Bad Dog!"}</button>
+    <button type="button" name="button" data-pup_id="${pup.id}">${pup.isGoodDog ? "Good Dog!" : "Bad Dog!"}</button>
     `
     dogBar.appendChild(pupSpan)
   })
 }
+const init = () => {
+  pupSpans = document.querySelectorAll('span');
 
-//DON't KNOW HOW TO INVOKE THIS
-// TRIED NOT WRAPPING IN FUNCTION
-//WORKS FINE IN CONSOLE. FML
-const goodBadBtnListner = () => {
-  let pupSpans = document.querySelectorAll('span')
   pupSpans.forEach((pupSpan) => {
-    goodBadBtn = pupSpan.querySelector("button")
-    goodBadBtn.addEventListener('click', () => console.log("togglePupGoodness"))
+    let goodBadBtn = pupSpan.querySelector("button")
+    goodBadBtn.addEventListener('click', togglePupGoodness)
   })
 }
 
-function togglePupGoodness() {
-  console.log("I AM HERE");
+function togglePupGoodness(event) {
+  const goodBadBtn = event.target
   if ((goodBadBtn.innerText) === "Good Dog!") {
     goodBadBtn.innerText = "Bad Dog!"
-    updatePupGoodness(goodBadBtn.innerText)
+    updatePupGoodness(goodBadBtn)
   } else {
     goodBadBtn.innerText = "Good Dog!"
-    updatePupGoodness(goodBadBtn.innerText)
+    updatePupGoodness(goodBadBtn)
   }
 }
 
 function updatePupGoodness(goodBad) {
-  console.log(("UPDATE????"));
-  fetch(`${pupsURL}`, {
+  let isGoodDog
+  (goodBad.innerText === 'Bad Dog!')? isGoodDog = false : isGoodDog = true
+  fetch(`${pupsURL}/${goodBad.dataset.pup_id}`, {
     method: 'PATCH',
     headers:{
     'Content-Type': 'application/json',
-    Accept: "application/json"
+    "Accept": "application/json"
     },
     body: JSON.stringify({
-      isGoodDog: `${goodBad}`
+      isGoodDog: isGoodDog
     })
   })
 }
 
 const filterPups = () => {
-console.log("FILTER");
-  const filterBtn = document.getElementById('good-dog-filter')
-  let onOff = filterBtn.innerText.split(' ')
-  onOff = onOff[onOff.length-1]
-
-  let pupSpans = document.querySelectorAll('span')
-  pupSpans.forEach((pupSpan) => {
-    goodBadBtn = pupSpan.querySelector("button")
-    if ((goodBadBtn.innerText === "Bad Dog!") && (onOff === 'ON')) {
-      filterBtn = 'Filter good dogs: OFF'
-    }  else {
-      filterBtn = 'Filter good dogs: ON'
-      pupSpan.style.display = 'none';
+  if (!isFilterOn) {
+    isFilterOn = true
+    filterBtn.innerText = 'Filter good dogs: ON'
+    pupSpans.forEach((pupSpan) => {
+      // if Filter is OFF:
+        // change filter text to ON
+        // change visibility of Bad Dogs to none
+        if (pupSpan.querySelector('button').innerText === 'Bad Dog!'){
+          pupSpan.style.display = 'none';
+        }
+      })
+    } else {
+      isFilterOn = false
+      filterBtn.innerText = 'Filter good dogs: OFF'
+      pupSpans.forEach((pupSpan) => {
+        pupSpan.style.display = '';
+      })
     }
-  })
-}
+  }
 
 fetchPups()
-goodBadBtnListner()
 
 filterBtn.addEventListener('click', filterPups)
